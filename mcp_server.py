@@ -82,7 +82,7 @@ def get_dataset_statistical_summary(path: str) -> dict[str, Any]:
 
 
 @mcp.tool(
-    name="Inspect_Column",
+    name="inspect_Column",
     description="Gives a detailed summary of a specific column/feature.",
 )
 def inspect_column(path: str, col_name: str) -> dict[str, Any]:
@@ -290,7 +290,7 @@ def find_correlations(path: str,threshold: float = 0.8) -> dict[str, Any]:
                     {
                     "Feature 1": feature_1,
                     "Feature 2": feature_2,
-                    "Correlation": correlation
+                    "Correlation": round(float(correlation), 4)
                     }
                 )
 
