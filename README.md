@@ -6,6 +6,10 @@ I built this project while learning MCP to understand how external capabilities 
 
 Instead of relying on an LLM to perform dataset operations itself, the server exposes deterministic Python/Pandas functions as MCP tools that compatible clients can discover and invoke.
 
+## Certified Badge 
+
+[![M8ven Score](https://m8ven.ai/badge/mcp/khanarmaghanrasheed-18-mcp-dataset-explorer-15ss4l)](https://m8ven.ai/mcp/khanarmaghanrasheed-18-mcp-dataset-explorer-15ss4l)
+
 ## Why I Built This
 
 While learning MCP, I wanted to build something more practical than basic file-reading or document-editing tools.
