@@ -1,304 +1,121 @@
-# Dataset Explorer MCP Server
+# Dataset Explorer MCP — Version 2
 
-A lightweight **Model Context Protocol (MCP) server** for exploring and analyzing CSV datasets.
+A lightweight **Model Context Protocol (MCP)** project for exploring CSV datasets through natural-language questions.
 
-I built this project while learning MCP to understand how external capabilities can be exposed to AI applications through a standardized protocol.
+Version 1 focused on building the MCP server and testing its tools through MCP Inspector. Version 2 adds a **custom MCP client with Google Gemini**, allowing the LLM to dynamically choose and use dataset-analysis tools.
 
-Instead of relying on an LLM to perform dataset operations itself, the server exposes deterministic Python/Pandas functions as MCP tools that compatible clients can discover and invoke.
-
-## Certified Badge 
+## Certified Badge
 
 [![M8ven Score](https://m8ven.ai/badge/mcp/khanarmaghanrasheed-18-mcp-dataset-explorer-15ss4l)](https://m8ven.ai/mcp/khanarmaghanrasheed-18-mcp-dataset-explorer-15ss4l)
 
-## Why I Built This
+## What It Does
 
-While learning MCP, I wanted to build something more practical than basic file-reading or document-editing tools.
+The user selects a CSV dataset at runtime and asks questions in natural language. Gemini sees the tools exposed by the MCP server, decides which tool is appropriate, the custom client executes it, and the result is returned to Gemini for a readable answer.
 
-Dataset exploration was a natural use case because many common exploratory data analysis operations can be implemented as reusable tools.
-
-For example, instead of manually writing Pandas code to inspect every new dataset, an MCP-compatible client can discover capabilities such as:
-
-- inspecting dataset structure
-- analyzing individual features
-- identifying missing values
-- detecting duplicate observations
-- finding strongly correlated features
-- detecting numerical outliers
-
-The project helped me understand the relationship between:
-
-**LLM → MCP Client → MCP Server → Tools → External computation/data**
+The client also maintains in-memory conversation context for follow-up questions and includes safeguards to reduce unnecessary or repeated tool calls.
 
 ## Architecture
 
 ```text
-             MCP Client
-          (MCP Inspector)
-                 │
-                 │ MCP
-                 ▼
-       ┌─────────────────────┐
-       │   Dataset Explorer  │
-       │     MCP Server      │
-       └──────────┬──────────┘
-                  │
-          ┌───────┴────────┐
-          │                │
-       MCP Tools        Pandas
-          │                │
-          └───────┬────────┘
-                  ▼
-             CSV Dataset
+User
+  ↓
+Google Gemini
+  ↓  chooses tool
+Custom MCP Client
+  ↓  MCP
+Dataset Explorer Server
+  ↓
+Python / Pandas
+  ↓
+CSV Dataset
+  ↓
+Tool Result → Gemini → User
 ```
 
-During development, **MCP Inspector acts as the client** and is used to discover and invoke the capabilities exposed by the server.
+The key idea is separation of responsibilities: **Gemini handles reasoning and tool selection, the MCP client handles orchestration, and the MCP server provides deterministic dataset capabilities.**
 
 ## MCP Tools
 
-### `get_dataset_overview`
+| Tool | What it does |
+|---|---|
+| `get_dataset_overview` | Returns feature names, data types, missing-value counts, and numerical/categorical columns. |
+| `dataset_shape` | Returns the number of rows and columns. |
+| `dataset_statistical_summary` | Calculates basic statistics such as mean, median, and mode. |
+| `inspect_Column` | Summarizes one feature including data type, missing values, unique values, min/max/mean or common categorical values. |
+| `analyze_target` | Analyzes a target variable and heuristically identifies classification or regression. |
+| `duplicate_finder` | Finds duplicate observations in the dataset. |
+| `analyze_missing_values` | Reports missing-value counts, percentages, affected rows, and basic suggestions. |
+| `find_correlations` | Finds strongly correlated numerical feature pairs above a configurable threshold. |
+| `detect_outliers` | Detects numerical outliers using the IQR method. |
 
-Returns a general overview of the dataset, including:
+## Dynamic Tool Selection
 
-- feature names
-- missing-value counts
-- categorical columns
-- numerical columns
-- data types
+The client discovers tools from the MCP server and converts their schemas into Gemini-compatible function declarations.
 
-### `dataset_shape`
+There are no hardcoded rules such as:
 
-Returns the number of rows and columns in the dataset.
-
-### `dataset_statistical_summary`
-
-Calculates the mean and median of numerical features.
-
-### `inspect_column`
-
-Provides detailed information about a selected feature.
-
-For numerical columns, this includes information such as:
-
-- data type
-- missing values
-- unique values
-- minimum
-- maximum
-- mean
-
-For categorical columns, it reports the most common values.
-
-### `analyze_target`
-
-Analyzes a selected target variable and provides a heuristic indication of whether the problem is likely:
-
-- Classification
-- Regression
-
-It also reports relevant statistics about the target.
-
-> The classification/regression determination is heuristic and should not replace understanding of the actual problem statement.
-
-### `duplicate_finder`
-
-Detects duplicate observations and reports:
-
-- duplicate count
-- duplicate percentage
-- example duplicate rows
-
-### `analyze_missing_values`
-
-Analyzes columns containing missing values and reports:
-
-- missing count
-- missing percentage
-- affected row indices
-- basic handling suggestions
-
-### `find_correlations`
-
-Calculates correlations between numerical features and returns strongly correlated feature pairs above a configurable threshold.
-
-Default threshold:
-
-```text
-|correlation| >= 0.8
+```python
+if "outlier" in question:
+    call_detect_outliers()
 ```
 
-### `detect_outliers`
-
-Detects potential numerical outliers using the **Interquartile Range (IQR)** method.
-
-For each affected feature, the tool reports:
-
-- number of detected outliers
-- percentage of observations
-- row indices
-- outlier values
-- lower bound
-- upper bound
-
-The IQR rule used is:
+Instead, Gemini decides which available tool best answers the user's question.
 
 ```text
-IQR = Q3 - Q1
-
-Lower Bound = Q1 - 1.5 × IQR
-Upper Bound = Q3 + 1.5 × IQR
+"How many rows are there?"
+        ↓
+Gemini chooses dataset_shape
+        ↓
+MCP client executes it
+        ↓
+Server returns structured result
+        ↓
+Gemini produces the final answer
 ```
 
-Values outside these bounds are reported as potential outliers.
+## Conversation Context
 
-## MCP Resource
+Conversation history is maintained in memory during the session, allowing follow-up questions such as **"Can this column be used for a machine-learning model?"** to refer to a column discussed previously.
 
-The server also exposes a dataset exploration guide as an MCP resource.
-
-```text
-dataset://guide
-```
-
-The resource describes the capabilities and limitations of the Dataset Explorer server.
-
-## MCP Prompt
-
-A reusable MCP prompt provides a structured workflow for exploring a dataset using the available tools.
-
-```text
-explore_dataset
-```
-
-The prompt guides an LLM through dataset structure, missing values, duplicates, correlations, outliers, and optional target analysis.
+The client also limits repeated and unnecessary tool calls so simple questions generally require only the minimum analysis needed.
 
 ## Project Structure
 
 ```text
-DatasetExplorer-MCP/
-│
+MCP-Dataset-Explorer/
 ├── mcp_server.py
-│
-├── data/
-│   └── sample.csv
-│
+├── mcp_client.py
 ├── README.md
 ├── pyproject.toml
 ├── uv.lock
 └── .gitignore
 ```
 
-## Installation
+## Running the Project
 
-### 1. Clone the repository
-
-```bash
-git clone <repository-url>
-cd DatasetExplorer-MCP
-```
-
-### 2. Install dependencies
-
-This project uses `uv` for dependency and environment management.
+Install the project dependencies and run:
 
 ```bash
-uv sync
+python mcp_client.py
 ```
 
-This recreates the project's virtual environment using the dependencies defined in `pyproject.toml` and locked in `uv.lock`.
-
-## Running the MCP Server
-
-The MCP server uses **stdio transport**.
-
-The server entry point is:
-
-```python
-if __name__ == "__main__":
-    mcp.run(transport="stdio")
-```
-
-The server can then be launched/configured through an MCP-compatible client such as **MCP Inspector**.
-
-## Testing with MCP Inspector
-
-MCP Inspector was used during development to verify:
-
-- server connectivity
-- tool discovery
-- tool schemas
-- tool execution
-- structured responses
-- resources
-- prompts
-
-Example workflow:
-
-```text
-MCP Inspector
-      │
-      │ calls detect_outliers
-      ▼
-Dataset Explorer Server
-      │
-      │ executes Pandas/IQR analysis
-      ▼
-Structured MCP Response
-```
-
-## Current Limitations
-
-The current version intentionally focuses on exploratory analysis.
-
-- Only CSV datasets are supported.
-- Correlation analysis currently uses Pearson correlation.
-- Outlier detection currently uses the IQR method.
-- Classification/regression detection is heuristic.
-- The server does not train machine-learning models.
-- The server does not automatically modify or clean datasets.
-- Preprocessing decisions still require understanding of the dataset and problem domain.
-
-## Future Improvements
-
-Possible future versions include:
-
-- Support for Excel and JSON datasets
-- Additional outlier detection methods
-- More advanced target analysis
-- Data visualization tools
-- Automated preprocessing recommendations
-- A custom MCP client
-- LLM integration for natural-language dataset exploration
-
-A future client could enable a workflow such as:
-
-```text
-User
-  │
-  ▼
-LLM
-  │
-  ▼
-MCP Client
-  │
-  ▼
-Dataset Explorer MCP Server
-  │
-  ▼
-Pandas / Dataset
-```
-
-This would allow a user to ask natural-language questions while the LLM dynamically selects and invokes the appropriate dataset-analysis tools.
+The client starts the MCP server through stdio, asks for a CSV dataset path, and opens the interactive natural-language query loop.
 
 ## Tech Stack
 
-- Python
-- Pandas
-- Model Context Protocol (MCP)
-- FastMCP
-- uv
-- MCP Inspector
+**Python · Pandas · Model Context Protocol (MCP) · FastMCP · Google Gemini · Google GenAI SDK · uv · MCP Inspector**
+
+## Current Limitations
+
+The project currently supports CSV datasets and focuses on exploratory analysis rather than training or modifying machine-learning models.
+
+## Future Improvements
+
+- Add visualizations generated from dataset analysis.
+- Build a simple web interface on top of the MCP client.
 
 ## Purpose
 
-This project was primarily built to understand MCP from first principles by implementing a practical server, exposing custom tools, and testing tool discovery and execution through an MCP client.
+This project was built to understand MCP beyond the server side by implementing the complete flow from **LLM reasoning → MCP client orchestration → MCP server tools → external data**.
 
-It is intended as a learning and portfolio project rather than a production-grade automated data analysis system.
+Version 1 taught me how to expose capabilities through MCP. Version 2 helped me understand how an LLM-powered application can dynamically discover and use those capabilities.
