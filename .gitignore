@@ -1,4 +1,8 @@
 .env
 __pycache__
+*.egg-info/
 .venv
+.venv-*
+.data/
+.pytest_cache/
 .DS_Store

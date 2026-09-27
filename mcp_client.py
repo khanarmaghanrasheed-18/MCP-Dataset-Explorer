@@ -58,18 +58,22 @@ class DatasetExplorerClient:
         return (
             "You are a dataset analysis assistant. "
             "Use the conversation history as the current session memory. "
-            "Reuse prior user questions, assistant answers, and tool results when they answer the current request. "
-            "Use the smallest set of MCP tools that can answer the question and do not repeat a tool call "
+            "Reuse prior questions, answers, and tool results when they answer the "
+            "current request. Use the smallest set of MCP tools that can answer the "
+            "question and do not repeat a tool call "
             "when the exact same tool and arguments are already known in this request. "
-            "Before calling a tool, check whether the needed information is already available in history. "
+            "Before calling a tool, check whether the information is already in history. "
             "Once enough information is known, answer directly without unnecessary tool calls. "
-            "After receiving MCP tool results, answer the user's original question in clear natural language. "
-            "Never expose raw tool calls, function responses, MCP objects, or internal API syntax to the user. "
+            "After receiving tool results, answer the original question clearly. Never "
+            "expose raw tool calls, responses, MCP objects, or internal API syntax. "
             "Call no more than three tools per user request. "
-            "If a tool result already answers the question, stop and answer instead of continuing to investigate."
+            "If a result answers the question, stop instead of continuing to investigate."
         )
 
-    def _safe_empty_response_fallback(self, message="I have enough information to answer, but the model returned an empty response."):
+    def _safe_empty_response_fallback(
+        self,
+        message="I have enough information, but the model returned an empty response.",
+    ):
         return message
 
     async def list_tools(self):
@@ -206,7 +210,8 @@ class DatasetExplorerClient:
             if self._request_tool_count >= self.max_tool_calls_per_request:
                 print("\n[Stopping: max tool calls reached for this request.]")
                 return self._safe_empty_response_fallback(
-                    "I reached the maximum tool limit for this request, so I am stopping with the information already available."
+                    "I reached the maximum tool limit, so I am stopping with the "
+                    "information already available."
                 )
 
             tool_key = self._tool_call_key(tool_name, tool_arguments)
@@ -215,7 +220,8 @@ class DatasetExplorerClient:
             if tool_key in self._request_tool_keys:
                 print(f"\n[Skipping duplicate tool call: {tool_name}]")
                 return self._safe_empty_response_fallback(
-                    "I already used that exact tool with the same arguments in this request, so there is no need to repeat it."
+                    "I already used that tool with the same arguments in this request, "
+                    "so there is no need to repeat it."
                 )
 
             self._request_tool_keys.add(tool_key)
@@ -228,7 +234,7 @@ class DatasetExplorerClient:
                 tool_arguments
             )
 
-            # Gemini receives the tool result as a function response so it can decide whether more work is needed.
+            # Gemini receives the result and decides whether more work is needed.
             function_response = types.Part.from_function_response(
                 name=tool_name,
                 response={"result": tool_result}
@@ -261,7 +267,7 @@ async def main():
 
             # 2. Select dataset once
             dataset_path = input(
-                "Enter CSV dataset path: "
+                "Enter dataset path (CSV, TSV, Excel, JSON, or Parquet): "
             ).strip()
 
             client.set_dataset(dataset_path)

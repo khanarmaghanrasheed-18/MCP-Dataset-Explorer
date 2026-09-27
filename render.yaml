@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: mcp-dataset-explorer
+    runtime: python
+    plan: free
+    buildCommand: pip install .
+    startCommand: uvicorn web_app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash-lite
+      - key: GEMINI_API_KEY
+        sync: false

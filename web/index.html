@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Upload a dataset and investigate it with evidence-backed AI.">
+  <title>Dataset Explorer</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Dataset Explorer home">
+        <span class="brand-mark" aria-hidden="true">DX</span>
+        <span>
+          <strong>Dataset Explorer</strong>
+          <small>Evidence before conclusions</small>
+        </span>
+      </a>
+      <div class="connection" id="connectionStatus">
+        <span class="status-dot"></span>
+        <span>Checking service</span>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar">
+        <section class="panel upload-panel">
+          <div class="section-label">Dataset</div>
+          <label class="drop-zone" id="dropZone" for="fileInput">
+            <span class="upload-icon" aria-hidden="true">↑</span>
+            <strong>Drop a dataset here</strong>
+            <span>or choose a file</span>
+            <small>CSV, TSV, Excel, JSON or Parquet · 25 MB maximum</small>
+          </label>
+          <input id="fileInput" type="file" hidden
+            accept=".csv,.tsv,.xlsx,.xls,.json,.parquet">
+          <div class="upload-status" id="uploadStatus" aria-live="polite"></div>
+        </section>
+
+        <section class="panel dataset-panel" id="datasetPanel" hidden>
+          <div class="section-heading">
+            <div>
+              <div class="section-label">Active dataset</div>
+              <h2 id="datasetName">—</h2>
+            </div>
+            <button class="icon-button" id="replaceDataset" title="Replace dataset"
+              aria-label="Replace dataset">↻</button>
+          </div>
+          <div class="metrics">
+            <div><strong id="rowCount">0</strong><span>Rows</span></div>
+            <div><strong id="columnCount">0</strong><span>Columns</span></div>
+          </div>
+          <div class="column-list" id="columnList"></div>
+        </section>
+
+        <section class="panel state-panel" id="statePanel" hidden>
+          <div class="section-label">Analysis state</div>
+          <dl class="state-list">
+            <div><dt>Goal</dt><dd id="stateGoal">Waiting for your question</dd></div>
+            <div><dt>Target</dt><dd id="stateTarget">Not selected</dd></div>
+            <div><dt>Status</dt><dd id="stateStatus">New</dd></div>
+          </dl>
+          <div class="finding-list" id="findingList"></div>
+        </section>
+      </aside>
+
+      <section class="chat-panel">
+        <div class="chat-heading">
+          <div>
+            <div class="section-label">Investigation</div>
+            <h1>Ask questions about your data</h1>
+          </div>
+          <span class="call-note">Bounded Gemini + MCP workflow</span>
+        </div>
+
+        <div class="messages" id="messages" aria-live="polite">
+          <div class="empty-state" id="emptyState">
+            <div class="empty-graphic" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
+            <h2>Start with a dataset</h2>
+            <p>Upload a file, then ask about quality, distributions, relationships, or a target.</p>
+            <div class="example-grid">
+              <button disabled>What quality issues should I fix?</button>
+              <button disabled>What appears related to my target?</button>
+              <button disabled>Which columns deserve investigation?</button>
+            </div>
+          </div>
+        </div>
+
+        <form class="composer" id="questionForm">
+          <label class="sr-only" for="questionInput">Ask about your dataset</label>
+          <textarea id="questionInput" rows="1" disabled
+            placeholder="Upload a dataset to begin"></textarea>
+          <button id="sendButton" type="submit" disabled>
+            <span>Analyze</span><span aria-hidden="true">↗</span>
+          </button>
+        </form>
+      </section>
+    </main>
+  </div>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>

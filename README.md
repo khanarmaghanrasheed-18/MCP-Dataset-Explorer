@@ -1,8 +1,9 @@
-# Dataset Explorer MCP — Version 2
+# Dataset Explorer MCP — Version 3
 
-A lightweight **Model Context Protocol (MCP)** project for exploring CSV datasets through natural-language questions.
+A lightweight **Model Context Protocol (MCP)** project for exploring tabular datasets through natural-language questions.
 
-Version 1 focused on building the MCP server and testing its tools through MCP Inspector. Version 2 adds a **custom MCP client with Google Gemini**, allowing the LLM to dynamically choose and use dataset-analysis tools.
+Version 3 adds a FastAPI web application, dataset uploads, structured analysis state, evidence
+storage, deterministic tool-result caching, and a bounded Gemini/MCP investigation workflow.
 
 ## Certified Badge
 
@@ -10,7 +11,7 @@ Version 1 focused on building the MCP server and testing its tools through MCP I
 
 ## What It Does
 
-The user selects a CSV dataset at runtime and asks questions in natural language. Gemini sees the tools exposed by the MCP server, decides which tool is appropriate, the custom client executes it, and the result is returned to Gemini for a readable answer.
+The user selects a CSV, TSV, Excel, JSON, or Parquet dataset at runtime and asks questions in natural language. Gemini sees the tools exposed by the MCP server, decides which tool is appropriate, the custom client executes it, and the result is returned to Gemini for a readable answer.
 
 The client also maintains in-memory conversation context for follow-up questions and includes safeguards to reduce unnecessary or repeated tool calls.
 
@@ -27,9 +28,19 @@ Dataset Explorer Server
   ↓
 Python / Pandas
   ↓
-CSV Dataset
+Tabular Dataset
   ↓
 Tool Result → Gemini → User
+```
+
+The web application uses this production flow:
+
+```text
+Browser → FastAPI → Agent Service → Gemini planning
+                         ↓
+                    MCP tools → Pandas
+                         ↓
+              SQLite state + evidence cache
 ```
 
 The key idea is separation of responsibilities: **Gemini handles reasoning and tool selection, the MCP client handles orchestration, and the MCP server provides deterministic dataset capabilities.**
@@ -47,6 +58,7 @@ The key idea is separation of responsibilities: **Gemini handles reasoning and t
 | `analyze_missing_values` | Reports missing-value counts, percentages, affected rows, and basic suggestions. |
 | `find_correlations` | Finds strongly correlated numerical feature pairs above a configurable threshold. |
 | `detect_outliers` | Detects numerical outliers using the IQR method. |
+| `screen_target_relationships` | Screens all feature-target relationships using Pearson correlation, eta squared, or Cramer's V according to the column types. |
 
 ## Dynamic Tool Selection
 
@@ -95,11 +107,25 @@ MCP-Dataset-Explorer/
 
 Install the project dependencies and run:
 
-```bash
-python mcp_client.py
+```powershell
+python -m pip install -e ".[dev]"
+uvicorn web_app:app --reload
 ```
 
-The client starts the MCP server through stdio, asks for a CSV dataset path, and opens the interactive natural-language query loop.
+Set `GEMINI_API_KEY` and optionally `GEMINI_MODEL` in `.env`. The browser application supports
+uploads up to 25 MB. The original terminal client remains available through `python mcp_client.py`.
+
+Run the automated test suite with:
+
+```powershell
+pytest
+```
+
+## Deployment
+
+`render.yaml` defines a free Render web service. During deployment, configure
+`GEMINI_API_KEY` as a secret environment variable. Free instances use ephemeral storage, so
+uploaded datasets and sessions can be cleared when the service restarts.
 
 ## Tech Stack
 
@@ -107,7 +133,7 @@ The client starts the MCP server through stdio, asks for a CSV dataset path, and
 
 ## Current Limitations
 
-The project currently supports CSV datasets and focuses on exploratory analysis rather than training or modifying machine-learning models.
+The project supports CSV, TSV, Excel (`.xlsx` and `.xls`), JSON, and Parquet datasets. Excel loading currently uses the first worksheet. The project focuses on exploratory analysis rather than training or modifying machine-learning models.
 
 ## Future Improvements
 
