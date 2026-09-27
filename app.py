@@ -7,6 +7,11 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+try:
+    import spaces
+except ImportError:
+    spaces = None
+
 import gradio as gr
 from dotenv import load_dotenv
 from mcp import ClientSession, StdioServerParameters
@@ -28,6 +33,16 @@ DATA_DIR = Path(os.getenv("DATA_DIR", DEFAULT_DATA_DIR)).resolve()
 UPLOAD_DIR = DATA_DIR / "uploads"
 store = StateStore(DATA_DIR / "dataset_explorer.db")
 logger = logging.getLogger(__name__)
+
+
+if spaces is not None:
+    @spaces.GPU
+    def zero_gpu_ready() -> str:
+        """Register a GPU callback for free ZeroGPU hosting; analysis remains on CPU."""
+        return "ready"
+else:
+    def zero_gpu_ready() -> str:
+        return "ready"
 
 
 def dataset_summary(dataset: dict[str, Any]) -> str:
@@ -138,6 +153,8 @@ with gr.Blocks(title="Dataset Explorer") as demo:
     with gr.Accordion("Analysis details", open=False):
         analysis_state = gr.JSON(label="Analysis state")
         latest_tools = gr.JSON(label="Tools used for latest answer")
+        zero_gpu_trigger = gr.Button(visible=False)
+        zero_gpu_output = gr.Textbox(visible=False)
 
     upload_button.click(
         handle_upload,
@@ -150,6 +167,7 @@ with gr.Blocks(title="Dataset Explorer") as demo:
             inputs=[question, session_id, chat],
             outputs=[question, chat, analysis_state, latest_tools],
         )
+    zero_gpu_trigger.click(zero_gpu_ready, outputs=zero_gpu_output)
 
 demo.queue(default_concurrency_limit=1)
 
