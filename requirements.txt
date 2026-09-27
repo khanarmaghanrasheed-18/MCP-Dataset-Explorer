@@ -1,0 +1,7 @@
+google-genai>=1.0.0
+mcp[cli]>=1.8.0,<2.0.0
+openpyxl>=3.1.5
+pandas
+pyarrow>=17.0.0
+python-dotenv>=1.1.0
+xlrd>=2.0.1
