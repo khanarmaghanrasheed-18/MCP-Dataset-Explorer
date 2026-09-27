@@ -41,6 +41,13 @@ free Gradio ZeroGPU Spaces. Choose **ZeroGPU** hardware when creating the Space.
 CPU and the Gemini API, so it does not request GPU time. Check current eligibility in the
 [Hugging Face Spaces documentation](https://huggingface.co/docs/hub/spaces-overview).
 
+## Render
+
+`render.yaml` deploys the existing FastAPI interface on Render's free web service.
+Connect the GitHub repository as a Blueprint and provide `GEMINI_API_KEY` when prompted.
+The free instance also uses temporary storage, so uploaded datasets and sessions may be
+cleared after a restart or redeploy.
+
 ## Analysis tools
 
 - Dataset overview, shape, and statistical summary
