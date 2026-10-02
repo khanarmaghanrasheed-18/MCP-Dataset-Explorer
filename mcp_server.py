@@ -125,7 +125,7 @@ def inspect_column(path: str, col_name: str) -> dict[str, Any]:
             "Minimum": float(series.min()), "Maximum": float(series.max()),
             "Mean": float(series.mean()),
         }
-    elif series.dtype in ["object", "category"]:
+    elif pd.api.types.is_string_dtype(series) or isinstance(series.dtype, pd.CategoricalDtype):
         return {
             "Feature": col_name, "Data Type": str(series.dtype),
             "Missing Values": int(series.isnull().sum()), "Unique Values": int(series.nunique()),
@@ -163,7 +163,7 @@ def analyze_target(path: str, target_name: str) -> dict[str, Any]:
             "Maximum": float(series.max()), "Mean": float(series.mean()),
             "Standard Deviation": float(series.std()),
         }
-    elif pd.api.types.is_object_dtype(series):
+    elif pd.api.types.is_string_dtype(series) or isinstance(series.dtype, pd.CategoricalDtype):
         return {
             "Feature": target_name, "Unique Values": int(series.nunique()),
             "Problem Type": "Classification",

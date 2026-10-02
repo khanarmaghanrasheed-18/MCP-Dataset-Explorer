@@ -8,7 +8,7 @@ dependencies = [
     "fastapi>=0.116.0",
     "google-genai>=1.0.0",
     "gradio>=5.0.0,<7.0.0",
-    "mcp[cli]>=1.8.0,<2.0.0",
+    "mcp[cli]>=1.30.0,<2.0.0",
     "openpyxl>=3.1.5",
     "pandas",
     "pyarrow>=17.0.0",
@@ -22,7 +22,7 @@ dependencies = [
 dev = ["pytest>=8.4.0"]
 
 [tool.setuptools]
-py-modules = ["agent_service", "app", "dataset_upload", "mcp_client", "mcp_server", "state_store", "web_app"]
+py-modules = ["agent_service", "app", "dataset_upload", "mcp_client", "mcp_server", "remote_mcp", "state_store", "web_app"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from agent_service import AgentService
 from dataset_upload import UploadTooLargeError, ingest_dataset
 from state_store import StateStore
+from remote_mcp import create_remote_mcp
 
 
 load_dotenv()
@@ -26,6 +27,8 @@ DATABASE_PATH = DATA_DIR / "dataset_explorer.db"
 WEB_DIR = BASE_DIR / "web"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 store = StateStore(DATABASE_PATH)
+remote_mcp = create_remote_mcp(store, UPLOAD_DIR)
+remote_http_app = remote_mcp.streamable_http_app()
 
 
 class SessionRequest(BaseModel):
@@ -52,6 +55,7 @@ async def lifespan(app: FastAPI):
     parameters = StdioServerParameters(command=sys.executable, args=[server_path])
 
     try:
+        await stack.enter_async_context(remote_mcp.session_manager.run())
         read, write = await stack.enter_async_context(stdio_client(parameters))
         session = await stack.enter_async_context(ClientSession(read, write))
         await session.initialize()
@@ -142,3 +146,8 @@ app.mount("/assets", StaticFiles(directory=WEB_DIR), name="assets")
 @app.get("/", include_in_schema=False)
 async def index() -> FileResponse:
     return FileResponse(WEB_DIR / "index.html")
+
+
+# The SDK owns the exact /mcp route. Mount last so existing web routes win and
+# /mcp is served directly, without Starlette's /mcp -> /mcp/ mount redirect.
+app.mount("/", remote_http_app)

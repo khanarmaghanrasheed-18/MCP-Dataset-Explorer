@@ -6,6 +6,8 @@ services:
     buildCommand: pip install .
     startCommand: uvicorn web_app:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
+    # The same service serves /mcp. Render supplies RENDER_EXTERNAL_HOSTNAME,
+    # which remote_mcp uses for explicit Host/Origin validation.
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.8
