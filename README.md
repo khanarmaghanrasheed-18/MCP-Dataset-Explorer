@@ -1,160 +1,147 @@
-# Dataset Explorer MCP
+# Dataset Explorer
 
-Dataset Explorer helps your AI assistant understand data files saved on your
-computer. Ask it to summarize a dataset, check missing values, find repeated
-rows, or spot unusual patterns. It calculates answers from your file and leaves
-the original unchanged.
+Ask your AI assistant questions about a dataset on your computer.
+Dataset Explorer does the calculations so your assistant can explain what is in
+the file, what needs attention, and which columns are related.
 
-It works with **CSV, TSV, Excel, JSON, and Parquet** files. Your assistant starts
-this small local server when needed. You don't need a web app, a hosting account,
-or a Gemini API key. Your assistant may send the results to its AI provider
-according to that client's settings.
+For example: **"Explore my sales file. Are any values missing? Are there repeated
+rows? Which columns are related to revenue?"**
 
-The connection uses **MCP over stdio**, which simply means your assistant talks
-directly to the server running on your computer.
-
-## How it finds relationships
-
-The server calculates statistics from your dataset rather than guessing them:
-
-- **Pearson correlation** checks how two numeric columns move together.
-- **Eta squared** compares numeric values across groups, such as scores across categories.
-- **Cramer's V** measures the relationship between two category columns.
-
-It chooses the method based on the types of columns being compared. These
-statistics show associations; they don't prove that one feature causes another.
+Your original file stays unchanged. There is no website to host and no Gemini
+API key to set up.
 
 <!-- mcp-name: io.github.khanarmaghanrasheed-18/dataset-explorer -->
 
-## Install
+## What can it help with?
 
-Available on [PyPI](https://pypi.org/project/dataset-explorer-mcp/).
+- Summarize your data, including row counts, columns, averages, and medians.
+- Find missing values, repeated rows, and unusual numbers.
+- Look closely at a column you care about.
+- Compare columns and explore their relationships.
 
-You need Python 3.10 or newer.
+Supported files: **CSV, TSV, Excel (`.xlsx` and `.xls`), JSON, and Parquet**.
+For Excel, the first worksheet is used. JSON files should contain table-like data.
+
+## Get started
+
+### 1. Install it
+
+You need **Python 3.10 or newer**. Run this in a terminal:
 
 ```sh
 python -m pip install dataset-explorer-mcp
 ```
 
-The command to start the server is:
+This downloads Dataset Explorer and the libraries it needs.
+You can also find it on [PyPI](https://pypi.org/project/dataset-explorer-mcp/).
 
-```sh
-dataset-explorer-mcp
-```
+### 2. Connect your AI assistant
 
-Your MCP client normally runs this command for you. If you run it in a terminal,
-it waits quietly for messages from a client. That is expected.
+Use **Claude Desktop**, **Cursor**, or **VS Code with Copilot**. These apps can
+connect to local tools through MCP. Choose your app below for the settings to add.
 
-If you use [uv](https://docs.astral.sh/uv/), you can run it without a separate installation:
+<details>
+<summary>Claude Desktop or Cursor</summary>
 
-```sh
-uvx dataset-explorer-mcp
-```
-
-## Connect your assistant
-
-Use an MCP client that supports local stdio servers, such as **Claude Desktop**,
-**VS Code with Copilot**, or **Cursor**. The settings file differs by client.
-
-For Claude Desktop or Cursor, add this to your MCP configuration:
+For Claude Desktop, open **Settings > Developer > Edit Config**.
+For Cursor, use its MCP settings or the `.cursor/mcp.json` file in your project.
+Add this entry to your configuration, keeping any servers you already have:
 
 ```json
 {
   "mcpServers": {
     "dataset-explorer": {
-      "command": "uvx",
-      "args": ["dataset-explorer-mcp"]
+      "command": "python",
+      "args": ["-m", "mcp_server"]
     }
   }
 }
 ```
 
-For VS Code, use `.vscode/mcp.json`:
+</details>
+
+<details>
+<summary>VS Code with Copilot</summary>
+
+Create or open `.vscode/mcp.json` in your project and add this server:
 
 ```json
 {
   "servers": {
     "dataset-explorer": {
       "type": "stdio",
-      "command": "uvx",
-      "args": ["dataset-explorer-mcp"]
+      "command": "python",
+      "args": ["-m", "mcp_server"]
     }
   }
 }
 ```
 
-If you installed with pip, use `"command": "dataset-explorer-mcp"` and `"args": []`
-instead. An absolute path to the executable also works. Reload your client after
-changing its configuration.
+</details>
 
-## Use a local file
+Restart your app or reload its MCP settings. It will start Dataset Explorer for
+you. If it cannot find Python, see the quick fixes below.
 
-Give your assistant the full path to your dataset. For example:
+### 3. Ask about a file
 
-> Explore `C:/Users/YourName/Downloads/customers.csv`. Check missing values and duplicates.
+Give your assistant the full path to the file and ask your question:
 
-> Summarize `/home/yourname/data/sales.xlsx` and inspect the revenue column.
+> Use Dataset Explorer to summarize `C:/Users/YourName/Downloads/sales.csv`.
+> Check for missing values and repeated rows, then explain the results.
 
-> In `/Users/yourname/data/results.parquet`, which features are associated with the target column `score`?
+On macOS or Linux, use a path such as `/Users/yourname/data/sales.csv` or
+`/home/yourname/data/sales.csv`.
 
-All tools take a `path`. A direct tool call looks like:
+The file must be on the computer where the server runs. Your assistant may send
+the calculated results to its AI provider according to that app's settings.
 
-```json
-{"path": "C:/Users/YourName/Downloads/customers.csv"}
-```
+## How does it find relationships?
 
-Use forward slashes in Windows paths, or double backslashes when writing JSON.
-The file must be available on the computer where the server runs.
+It calculates established statistics directly from your dataset:
 
-## Supported files and tools
+- **Pearson correlation:** how two numeric columns move together.
+- **Eta squared:** how numeric values differ between groups.
+- **Cramer's V:** how two category columns are related.
 
-Supported files: **CSV, TSV, Excel (`.xlsx`, `.xls`), JSON, and Parquet**.
-Excel reads the first worksheet. JSON must contain tabular data that Pandas can read.
+It chooses the method to suit the columns. These results help you spot patterns;
+they do not prove that one thing causes another. Results depend on the data you provide.
 
-| Tool | What it does |
-| --- | --- |
-| `get_dataset_overview` | Lists columns, types, and missing-value counts |
-| `dataset_shape` | Counts rows and columns |
-| `dataset_statistical_summary` | Calculates numeric means and medians |
-| `inspect_Column` | Summarizes one column; also takes `col_name` |
-| `analyze_target` | Inspects a target column; also takes `target_name` |
-| `duplicate_finder` | Finds repeated rows |
-| `analyze_missing_values` | Reports missing data |
-| `find_correlations` | Finds related numeric columns; optional `threshold` defaults to `0.8` |
-| `detect_outliers` | Finds unusual numeric values |
-| `screen_target_relationships` | Compares features with a target; also takes `target` |
+## Quick fixes
 
-The server also offers the `dataset://guide` resource and an `explore_dataset`
-prompt. These results help you explore data; they don't prove causes or train a model.
-Large files need enough RAM because each tool loads the dataset into memory.
+- **Python or the package cannot be found:** run `python -c "import sys; print(sys.executable)"`
+  in the terminal where you installed it. Use the printed path in place of `python`
+  in your app's configuration. On Windows, use forward slashes in that path.
+- **File not found:** give the full file path and check that your assistant has
+  permission to read it.
+- **No tools appear:** reload the MCP settings and check your app's server logs.
+- **The terminal seems idle:** that is normal. This server waits for your assistant
+  to connect; it does not open a chat window of its own.
 
-## Troubleshooting
+Large files need enough memory because the server loads the dataset for each request.
 
-- **Command not found:** use the full path to `dataset-explorer-mcp`, or install uv
-  and use the `uvx` configuration above.
-- **File not found:** use an absolute path and check that the server can read it.
-- **No tools appear:** check your client's server logs and reload its MCP settings.
-- **Server seems idle:** it is waiting for the MCP client; connect it through your
-  assistant rather than typing questions into the server terminal.
-- **Unsupported file:** save the data in one of the formats listed above.
-- **Missing values in statistics:** empty or constant columns may have undefined
-  statistics. Check the overview and missing-value tools first.
+<details>
+<summary>For developers: tools and running from source</summary>
 
-Normal server output is reserved for MCP messages. Diagnostics go to stderr,
-which your client's server logs usually display.
+The server uses local stdio. Start it with `dataset-explorer-mcp` or
+`python -m mcp_server`. Logs go to stderr; stdout carries MCP messages.
 
-## Run from source
+Its ten tools are `get_dataset_overview`, `dataset_shape`,
+`dataset_statistical_summary`, `inspect_Column`, `analyze_target`,
+`duplicate_finder`, `analyze_missing_values`, `find_correlations`,
+`detect_outliers`, and `screen_target_relationships`. Every tool accepts a local
+file `path`. A guide is available at `dataset://guide`, along with an
+`explore_dataset` prompt.
+
+After cloning this repository:
 
 ```sh
-git clone https://github.com/khanarmaghanrasheed-18/MCP-Dataset-Explorer.git
-cd MCP-Dataset-Explorer
 python -m pip install -e ".[dev]"
 python -m pytest -q
 python mcp_server.py
 ```
 
-Build the downloadable package with `python -m build`.
+Build a package with `python -m build`.
 
-## License
+</details>
 
-MIT. See [LICENSE](LICENSE).
+MIT licensed. See [LICENSE](LICENSE).
