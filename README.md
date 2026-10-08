@@ -1,18 +1,34 @@
 # Dataset Explorer MCP
 
-Understand a dataset by asking your AI assistant questions about it. This small
-Python server reads files on your computer and calculates the answers using
-Pandas. It checks missing values, finds duplicates, summarizes columns, and
-shows relationships between features.
+Dataset Explorer helps your AI assistant understand data files saved on your
+computer. Ask it to summarize a dataset, check missing values, find repeated
+rows, or spot unusual patterns. It calculates answers from your file and leaves
+the original unchanged.
 
-It runs locally through **stdio**: your MCP client starts the server and talks to
-it directly. You don't need a website, a hosting account, or a Gemini API key.
-The server reads your files without changing them. Your assistant may send tool
-results to its AI provider according to that client's settings.
+It works with **CSV, TSV, Excel, JSON, and Parquet** files. Your assistant starts
+this small local server when needed. You don't need a web app, a hosting account,
+or a Gemini API key. Your assistant may send the results to its AI provider
+according to that client's settings.
+
+The connection uses **MCP over stdio**, which simply means your assistant talks
+directly to the server running on your computer.
+
+## How it finds relationships
+
+The server calculates statistics from your dataset rather than guessing them:
+
+- **Pearson correlation** checks how two numeric columns move together.
+- **Eta squared** compares numeric values across groups, such as scores across categories.
+- **Cramer's V** measures the relationship between two category columns.
+
+It chooses the method based on the types of columns being compared. These
+statistics show associations; they don't prove that one feature causes another.
 
 <!-- mcp-name: io.github.khanarmaghanrasheed-18/dataset-explorer -->
 
 ## Install
+
+Available on [PyPI](https://pypi.org/project/dataset-explorer-mcp/).
 
 You need Python 3.10 or newer.
 

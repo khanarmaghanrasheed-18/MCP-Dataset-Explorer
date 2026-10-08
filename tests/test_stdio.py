@@ -130,4 +130,4 @@ def test_installed_module_starts_from_another_directory(tmp_path):
         capture_output=True, text=True, timeout=30,
     )
     assert result.returncode == 0
-    assert "0.2.0" in result.stdout
+    assert "0.2.1" in result.stdout

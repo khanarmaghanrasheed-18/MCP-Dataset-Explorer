@@ -735,7 +735,7 @@ def explore_dataset(path: str, target_name: str = "") -> str:
 def main() -> None:
     """Start the local MCP server; stdout belongs exclusively to the protocol."""
     parser = argparse.ArgumentParser(description="Analyze local datasets through MCP stdio.")
-    parser.add_argument("--version", action="version", version="%(prog)s 0.2.0")
+    parser.add_argument("--version", action="version", version="%(prog)s 0.2.1")
     parser.parse_args()
     logging.basicConfig(stream=sys.stderr, level=logging.INFO, force=True)
     mcp.run(transport="stdio")
