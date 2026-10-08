@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -38,3 +40,9 @@ def test_load_rejects_unknown_format(tmp_path):
 
     with pytest.raises(ValueError, match="Unsupported dataset format"):
         load_dataset(str(path))
+
+
+def test_load_legacy_excel():
+    path = Path(__file__).parent / "fixtures" / "sample.xls"
+    loaded = load_dataset(str(path))
+    assert loaded.to_dict(orient="list") == {"score": [10, 20, 30], "group": ["A", "B", "A"]}

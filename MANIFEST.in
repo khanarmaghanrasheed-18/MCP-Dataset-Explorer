@@ -1,0 +1,3 @@
+include server.json
+include iris.csv
+include tests/fixtures/sample.xls

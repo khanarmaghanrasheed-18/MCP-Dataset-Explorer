@@ -1,124 +1,144 @@
----
-title: Dataset Explorer
-emoji: 📊
-colorFrom: indigo
-colorTo: blue
-sdk: gradio
-sdk_version: 6.28.0
-python_version: 3.12.12
-app_file: app.py
-short_description: Ask evidence-backed questions about uploaded tabular datasets.
----
+# Dataset Explorer MCP
 
-# Dataset Explorer
+Understand a dataset by asking your AI assistant questions about it. This small
+Python server reads files on your computer and calculates the answers using
+Pandas. It checks missing values, finds duplicates, summarizes columns, and
+shows relationships between features.
 
-Upload a CSV, TSV, Excel, JSON, or Parquet file and ask questions about it. Gemini chooses from
-the available MCP analysis tools; Pandas computes the results. The application stores each
-session's analysis state, evidence, and tool cache in SQLite.
+It runs locally through **stdio**: your MCP client starts the server and talks to
+it directly. You don't need a website, a hosting account, or a Gemini API key.
+The server reads your files without changing them. Your assistant may send tool
+results to its AI provider according to that client's settings.
 
-## Run locally
+<!-- mcp-name: io.github.khanarmaghanrasheed-18/dataset-explorer -->
 
-```powershell
+## Install
+
+You need Python 3.10 or newer.
+
+```sh
+python -m pip install dataset-explorer-mcp
+```
+
+The command to start the server is:
+
+```sh
+dataset-explorer-mcp
+```
+
+Your MCP client normally runs this command for you. If you run it in a terminal,
+it waits quietly for messages from a client. That is expected.
+
+If you use [uv](https://docs.astral.sh/uv/), you can run it without a separate installation:
+
+```sh
+uvx dataset-explorer-mcp
+```
+
+## Connect your assistant
+
+Use an MCP client that supports local stdio servers, such as **Claude Desktop**,
+**VS Code with Copilot**, or **Cursor**. The settings file differs by client.
+
+For Claude Desktop or Cursor, add this to your MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "dataset-explorer": {
+      "command": "uvx",
+      "args": ["dataset-explorer-mcp"]
+    }
+  }
+}
+```
+
+For VS Code, use `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "dataset-explorer": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["dataset-explorer-mcp"]
+    }
+  }
+}
+```
+
+If you installed with pip, use `"command": "dataset-explorer-mcp"` and `"args": []`
+instead. An absolute path to the executable also works. Reload your client after
+changing its configuration.
+
+## Use a local file
+
+Give your assistant the full path to your dataset. For example:
+
+> Explore `C:/Users/YourName/Downloads/customers.csv`. Check missing values and duplicates.
+
+> Summarize `/home/yourname/data/sales.xlsx` and inspect the revenue column.
+
+> In `/Users/yourname/data/results.parquet`, which features are associated with the target column `score`?
+
+All tools take a `path`. A direct tool call looks like:
+
+```json
+{"path": "C:/Users/YourName/Downloads/customers.csv"}
+```
+
+Use forward slashes in Windows paths, or double backslashes when writing JSON.
+The file must be available on the computer where the server runs.
+
+## Supported files and tools
+
+Supported files: **CSV, TSV, Excel (`.xlsx`, `.xls`), JSON, and Parquet**.
+Excel reads the first worksheet. JSON must contain tabular data that Pandas can read.
+
+| Tool | What it does |
+| --- | --- |
+| `get_dataset_overview` | Lists columns, types, and missing-value counts |
+| `dataset_shape` | Counts rows and columns |
+| `dataset_statistical_summary` | Calculates numeric means and medians |
+| `inspect_Column` | Summarizes one column; also takes `col_name` |
+| `analyze_target` | Inspects a target column; also takes `target_name` |
+| `duplicate_finder` | Finds repeated rows |
+| `analyze_missing_values` | Reports missing data |
+| `find_correlations` | Finds related numeric columns; optional `threshold` defaults to `0.8` |
+| `detect_outliers` | Finds unusual numeric values |
+| `screen_target_relationships` | Compares features with a target; also takes `target` |
+
+The server also offers the `dataset://guide` resource and an `explore_dataset`
+prompt. These results help you explore data; they don't prove causes or train a model.
+Large files need enough RAM because each tool loads the dataset into memory.
+
+## Troubleshooting
+
+- **Command not found:** use the full path to `dataset-explorer-mcp`, or install uv
+  and use the `uvx` configuration above.
+- **File not found:** use an absolute path and check that the server can read it.
+- **No tools appear:** check your client's server logs and reload its MCP settings.
+- **Server seems idle:** it is waiting for the MCP client; connect it through your
+  assistant rather than typing questions into the server terminal.
+- **Unsupported file:** save the data in one of the formats listed above.
+- **Missing values in statistics:** empty or constant columns may have undefined
+  statistics. Check the overview and missing-value tools first.
+
+Normal server output is reserved for MCP messages. Diagnostics go to stderr,
+which your client's server logs usually display.
+
+## Run from source
+
+```sh
+git clone https://github.com/khanarmaghanrasheed-18/MCP-Dataset-Explorer.git
+cd MCP-Dataset-Explorer
 python -m pip install -e ".[dev]"
-python app.py
+python -m pytest -q
+python mcp_server.py
 ```
 
-Set `GEMINI_API_KEY` in the environment or a local `.env` file before asking questions. You can
-upload and preview a dataset without the key. The legacy FastAPI interface remains available
-through `uvicorn web_app:app --reload`, and the terminal client through `python mcp_client.py`.
+Build the downloadable package with `python -m build`.
 
-Run tests with `python -m pytest -q`.
+## License
 
-## Hugging Face Spaces
-
-The repository includes Gradio Space metadata in this README, the `app.py` entry point, and
-`requirements.txt`. Add `GEMINI_API_KEY` in the Space's **Settings → Secrets**; never commit it.
-The Space uses temporary storage, so uploaded files and sessions disappear when it restarts.
-
-As of September 2026, a standard Gradio Space requires a paid Hugging Face plan. A personal
-account with a verified email and more than 30 days of account history may create up to two
-free Gradio ZeroGPU Spaces. Choose **ZeroGPU** hardware when creating the Space. This app uses
-CPU and the Gemini API, so it does not request GPU time. Check current eligibility in the
-[Hugging Face Spaces documentation](https://huggingface.co/docs/hub/spaces-overview).
-
-## Render
-
-`render.yaml` deploys the existing FastAPI interface on Render's free web service.
-Connect the GitHub repository as a Blueprint and provide `GEMINI_API_KEY` when prompted.
-The free instance also uses temporary storage, so uploaded datasets and sessions may be
-cleared after a restart or redeploy.
-
-## ChatGPT / Remote MCP
-
-The existing FastAPI service also serves Streamable HTTP at **`/mcp`**. ChatGPT
-orchestrates these tools directly, without calling Gemini; the web/Gradio workflows
-and `python mcp_server.py` stdio entrypoint remain available.
-
-```powershell
-python -m pip install -e ".[dev]"
-python -m uvicorn web_app:app --host 127.0.0.1 --port 8000
-```
-
-Connect to `http://localhost:8000/mcp` using Streamable HTTP in
-`npx @modelcontextprotocol/inspector`, or list tools from its CLI:
-
-```powershell
-npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --transport http --method tools/list
-```
-
-`ingest_dataset` accepts `file: {download_url, file_id, mime_type?, file_name?}`,
-advertised through [`_meta["openai/fileParams"]`](https://developers.openai.com/plugins/reference).
-It downloads the ChatGPT file, reuses the shared ingestion/hash/schema pipeline, and
-returns `dataset_id`, filename, row/column counts and schema. All ten analysis tools
-use `dataset_id`; no remote tool accepts or returns a server filesystem path.
-In Inspector, call ingestion with a direct public HTTPS dataset URL, a test `file_id`
-and its filename, then call `dataset_shape` with the returned ID.
-
-Downloads allow public HTTPS destinations on port 443 only, pin the validated IP
-while verifying the TLS hostname, reject redirects, and enforce the 25 MB limit
-during streaming. Socket operations time out after 10 seconds; the download loop
-also checks a 60-second budget. Missing filenames are inferred only from recognized
-MIME types; otherwise provide the filename. Temporary signed URLs are not persisted.
-
-Render continues using `pip install .` and the unchanged start command:
-`uvicorn web_app:app --host 0.0.0.0 --port $PORT`. After deploying these changes to
-the existing service, use **`https://mcp-dataset-explorer.onrender.com/mcp`**.
-Check the service's **Settings → Build & Deploy → Auto-Deploy**; if disabled, deploy
-the updated connected branch through **Manual Deploy → Deploy latest commit**.
-Render supplies TLS and `RENDER_EXTERNAL_HOSTNAME`, which is explicitly allowed
-by the MCP Host/Origin checks. For a custom domain, set comma-separated
-`MCP_ALLOWED_HOSTS` and `MCP_ALLOWED_ORIGINS` (origins include `https://`).
-The SDK requirement is now `mcp[cli]>=1.30.0,<2.0.0`, the tested v1 API supporting
-tool metadata, transport security, and a bounded incoming request body; no v2 migration.
-
-In ChatGPT, enable Developer Mode where available, create a private MCP connection
-using the HTTPS URL and **No authentication**, then enable it in a chat and attach
-a dataset. Ask ChatGPT to ingest it and reuse its ID for analysis. See the official
-[connection instructions](https://developers.openai.com/plugins/deploy/connect-chatgpt)
-for the controls available to your account. Refresh the connection's tool list after
-server updates. The local HTTP address cannot be reached directly by hosted ChatGPT.
-
-This is an **unauthenticated personal/testing endpoint**, not a multi-user access-control
-system: anyone able to reach it can ingest files, and anyone holding a dataset ID can
-analyze that dataset. A private ChatGPT connection does not make the server private.
-Uploads and SQLite share `DATA_DIR` (default `.data`), allowing a persistent disk later.
-On [Render Free](https://render.com/docs/free), storage is temporary: restart, spin-down
-or redeployment may invalidate IDs. Re-upload the dataset to recover. Cold starts may
-require retrying a connection. End-to-end ChatGPT attachment delivery requires a live
-deployment and a test in your ChatGPT account; local tests mock the temporary download.
-
-## Analysis tools
-
-- Dataset overview, shape, and statistical summary
-- Column and target inspection
-- Missing values, duplicates, correlations, and outliers
-- Target relationship screening with Pearson correlation, eta squared, or Cramer's V
-
-Gemini interprets the question and selects tools. The MCP server returns statistics; the
-application stores those results as evidence and asks Gemini for a cited explanation. Per
-question, the agent makes at most four tool calls.
-
-## Limits
-
-Uploads are capped at 25 MB. Excel loading currently reads the first worksheet. This is an
-exploratory analysis tool and does not establish causal effects or train ML models.
+MIT. See [LICENSE](LICENSE).

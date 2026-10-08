@@ -1,3 +1,6 @@
+import argparse
+import logging
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +18,7 @@ mcp = FastMCP("DatasetExplorer")
 def load_dataset(path: str) -> pd.DataFrame:
     """Load a supported tabular dataset into a Pandas DataFrame."""
 
-    file_path = Path(path)
+    file_path = Path(path).expanduser()
 
     if not file_path.exists():
         raise FileNotFoundError(f"Dataset not found: {path}")
@@ -729,5 +732,14 @@ def explore_dataset(path: str, target_name: str = "") -> str:
 # SERVER ENTRY POINT
 # =============================================================================
 
-if __name__ == "__main__":
+def main() -> None:
+    """Start the local MCP server; stdout belongs exclusively to the protocol."""
+    parser = argparse.ArgumentParser(description="Analyze local datasets through MCP stdio.")
+    parser.add_argument("--version", action="version", version="%(prog)s 0.2.0")
+    parser.parse_args()
+    logging.basicConfig(stream=sys.stderr, level=logging.INFO, force=True)
     mcp.run(transport="stdio")
+
+
+if __name__ == "__main__":
+    main()
