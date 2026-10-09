@@ -1,0 +1,94 @@
+name: Validate and publish package
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish this version to PyPI and the MCP Registry
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build and test dependencies
+        run: python -m pip install ".[dev]"
+      - name: Check release metadata
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, tomllib
+          project = tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]
+          server = json.loads(pathlib.Path("server.json").read_text())
+          package = server["packages"][0]
+          assert project["version"] == server["version"] == package["version"]
+          assert project["name"] == package["identifier"]
+          assert project["description"] == server["description"]
+          marker = f"mcp-name: {server['name']}"
+          assert marker in pathlib.Path("README.md").read_text()
+          ref = os.environ["GITHUB_REF"]
+          if ref.startswith("refs/tags/v"):
+              assert ref.removeprefix("refs/tags/v") == project["version"]
+          PY
+      - name: Run tests
+        run: python -m pytest -q
+      - name: Build distributions
+        run: python -m build
+      - name: Check distribution metadata
+        run: python -m twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
+
+  publish-pypi:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/dataset-explorer-mcp/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+
+  publish-registry:
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install MCP publisher
+        run: |
+          curl --fail --location https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz --output publisher.tar.gz
+          tar -xzf publisher.tar.gz mcp-publisher
+      - name: Authenticate to MCP Registry
+        run: ./mcp-publisher login github-oidc
+      - name: Publish registry metadata
+        run: ./mcp-publisher publish
