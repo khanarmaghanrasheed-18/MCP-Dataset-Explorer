@@ -1,4 +1,10 @@
-# Dataset Explorer
+# Dataset Explorer — MCP server for local data analysis
+
+[![PyPI version](https://img.shields.io/pypi/v/dataset-explorer-mcp)](https://pypi.org/project/dataset-explorer-mcp/)
+
+[Download on PyPI](https://pypi.org/project/dataset-explorer-mcp/) ·
+[Official MCP Registry](https://registry.modelcontextprotocol.io/?q=io.github.khanarmaghanrasheed-18%2Fdataset-explorer) ·
+[Glama directory](https://glama.ai/mcp/servers/khanarmaghanrasheed-18/MCP-Dataset-Explorer)
 
 Ask your AI assistant questions about a dataset on your computer.
 Dataset Explorer does the calculations so your assistant can explain what is in
