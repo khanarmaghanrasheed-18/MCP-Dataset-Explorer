@@ -4,8 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dataset-explorer-mcp"
-version = "0.2.1"
-description = "Help your AI explore local data using summaries, Pearson correlation, eta squared, and Cramer's V."
+version = "0.2.2"
+description = "Local MCP analysis for CSV, TSV, Excel, JSON and Parquet: summaries, outliers and relationships."
+keywords = ["mcp","model-context-protocol","dataset","data-analysis","eda","pandas","csv","excel","parquet"]
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{name = "Armaghan Rasheed"}]
