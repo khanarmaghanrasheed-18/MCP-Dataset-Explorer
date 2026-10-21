@@ -2,6 +2,8 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/dataset-explorer-mcp)](https://pypi.org/project/dataset-explorer-mcp/)
 
+[![Dataset Explorer MCP server](https://mcprush.com/badge/dataset-explorer-mcp/card.svg)](https://mcprush.com/to/dataset-explorer-mcp?ref=badge)
+
 [Download on PyPI](https://pypi.org/project/dataset-explorer-mcp/) ·
 [Official MCP Registry](https://registry.modelcontextprotocol.io/?q=io.github.khanarmaghanrasheed-18%2Fdataset-explorer) ·
 [Glama directory](https://glama.ai/mcp/servers/khanarmaghanrasheed-18/MCP-Dataset-Explorer)
