@@ -181,4 +181,10 @@ Build a package with `python -m build`.
 
 </details>
 
+## More of my work
+
+- [Veritas](https://github.com/abdulwasaydev/Agentika-InevitableWinners-Nascon): FastAPI verification and human-review workflow for AI-generated claims.
+- [FlyRank ML internship](https://github.com/khanarmaghanrasheed-18/FlyRankAi-KhanArmaghan-Internship-2026#my-work): DuckDB page-pair features and a weighted-overlap baseline.
+- [Haq team write-up](https://www.linkedin.com/posts/zaheen-masood-8a4653375_what-does-stranger-things-vecna-have-to-activity-7494314765352079360-T6jn): a voice-first legal guidance hackathon prototype.
+
 MIT licensed. See [LICENSE](LICENSE).
