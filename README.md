@@ -20,6 +20,35 @@ API key to set up.
 
 <!-- mcp-name: io.github.khanarmaghanrasheed-18/dataset-explorer -->
 
+## Quick demo: check a small CSV
+
+Save this as `sample.csv` on the computer running the MCP server:
+
+```csv
+score,double,group
+1,2,A
+2,4,A
+3,6,B
+3,6,B
+,8,B
+```
+
+**Prompt:** “Use Dataset Explorer to check `/full/path/to/sample.csv` for missing
+values and duplicate rows.” Replace the path with the file's actual absolute path.
+
+**MCP calls:** `analyze_missing_values({"path": "/full/path/to/sample.csv"})`
+and `duplicate_finder({"path": "/full/path/to/sample.csv"})`.
+
+**Reproduced result:** 5 rows; `score` is missing in one row (row index 4,
+20% of rows), and one row is a duplicate (20%). I reproduced these values by
+calling both tools through the local MCP stdio client. The server returns JSON;
+the assistant can turn it into a short explanation.
+
+To try it yourself, [install the package and connect a client](#get-started).
+Earlier experiments show the [Gemini-connected MCP client](https://github.com/khanarmaghanrasheed-18/MCP-Dataset-Explorer/blob/ddf6bf9/mcp_client.py)
+and the [Streamable HTTP endpoint prototype](https://github.com/khanarmaghanrasheed-18/MCP-Dataset-Explorer/blob/e6c28d7/remote_mcp.py).
+The installable version below runs locally over stdio.
+
 ## What can it help with?
 
 - Summarize your data, including row counts, columns, averages, and medians.
