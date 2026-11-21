@@ -74,8 +74,27 @@ You can also find it on [PyPI](https://pypi.org/project/dataset-explorer-mcp/).
 
 ### 2. Connect your AI assistant
 
-Use **Claude Desktop**, **Cursor**, or **VS Code with Copilot**. These apps can
-connect to local tools through MCP. Choose your app below for the settings to add.
+Use **Claude Code**, **Claude Desktop**, **Cursor**, or **VS Code with Copilot**.
+Choose your app below for the settings to add.
+
+<details>
+<summary>Claude Code</summary>
+
+From the project where you want to use Dataset Explorer, run:
+
+```sh
+claude mcp add --transport stdio dataset-explorer -- python -m mcp_server
+claude mcp get dataset-explorer
+```
+
+Use the same Python interpreter you used to install the package. If Claude
+Code cannot find that interpreter, replace `python` with its quoted absolute
+path as described in [Quick fixes](#quick-fixes). The default Claude Code
+scope is local to you and the current project. Open an interactive session
+and use `/mcp` to check the connection. See the
+[Claude Code MCP guide](https://code.claude.com/docs/en/mcp) for more on scopes.
+
+</details>
 
 <details>
 <summary>Claude Desktop or Cursor</summary>
@@ -178,6 +197,20 @@ python mcp_server.py
 ```
 
 Build a package with `python -m build`.
+
+- [`mcp_server.py`](mcp_server.py) is the implementation. `load_dataset()`
+  chooses the pandas reader from the file extension. The FastMCP decorators
+  define the client-facing tool names, resource and prompt. Keep those names
+  and argument names stable when changing the Python internals.
+- Use `find_correlations` to compare numeric columns across the file. Use
+  `screen_target_relationships` to compare predictors with a named target
+  across numeric and categorical types. Treat `analyze_target` as a heuristic
+  suggestion about the problem type. Review ambiguous data types and sample
+  sizes before using any of these results for modeling.
+- [`tests/test_stdio.py`](tests/test_stdio.py) checks server startup,
+  discovery and tool calls over local stdio. The other tests cover file loading,
+  column types and relationship calculations. For package and registry
+  publication, follow [RELEASING.md](RELEASING.md).
 
 </details>
 
